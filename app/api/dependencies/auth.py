@@ -9,10 +9,9 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database.connection import get_db
 from app.infrastructure.database.models.operacao import Usuario
 
+from app.core.config import settings
 
-SECRET_KEY = "troque-esta-chave-por-uma-chave-secreta"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 password_hash = PasswordHash.recommended()
 
@@ -29,7 +28,7 @@ def verificar_senha(senha: str, senha_hash: str) -> bool:
 
 def criar_token(usuario: Usuario) -> str:
     expiracao = datetime.now(timezone.utc) + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+       minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
     payload = {
@@ -38,8 +37,7 @@ def criar_token(usuario: Usuario) -> str:
         "exp": expiracao,
     }
 
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 def autenticar_usuario(
     username: str,
@@ -70,8 +68,8 @@ def usuario_atual(
 
     try:
         payload = jwt.decode(
-            token, SECRET_KEY, algorithms=[ALGORITHM]
-        )
+    token, settings.SECRET_KEY, algorithms=[ALGORITHM]
+    )
         usuario_id = int(payload.get("sub"))
     except (jwt.InvalidTokenError, TypeError, ValueError):
         raise erro
