@@ -19,6 +19,7 @@ from app.infrastructure.database.models.operacao import (
 )
 from app.api.schemas.sistema import (
     UsuarioCreate,
+    UsuarioFuncionarioCreate,
     UsuarioResponse,
     TokenResponse,
     ProdutoCreate,
@@ -165,14 +166,62 @@ def cadastrar_usuario(
         nome=dados.nome,
         email=email,
         senha_hash=hash_senha(dados.senha),
-        perfil="ADMIN" if primeiro_usuario else "CLIENTE",
+        perfil="CLIENTE",
     )
-
     db.add(usuario)
     db.commit()
     db.refresh(usuario)
 
-    return usuario
+    return usuario 
+
+
+@router.post(
+    "/auth/usuarios/funcionarios",
+    response_model=UsuarioResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def cadastrar_funcionario(
+    dados: UsuarioFuncionarioCreate,
+    db: Session = Depends(get_db),
+    administrador: Usuario = Depends(
+        exigir_perfis("ADMIN")
+    ),
+):
+    email = dados.email.strip().lower()
+
+    existente = db.query(Usuario).filter(
+        Usuario.email == email
+    ).first()
+
+    if existente:
+        raise HTTPException(
+            status_code=409,
+            detail="Já existe um usuário com este e-mail."
+        )
+
+    funcionario = Usuario(
+        nome=dados.nome,
+        email=email,
+        senha_hash=hash_senha(dados.senha),
+        perfil=dados.perfil,
+    )
+
+    db.add(funcionario)
+    db.flush()
+
+    registrar_auditoria(
+        db,
+        administrador.id,
+        "FUNCIONARIO_CADASTRADO",
+        "Usuario",
+        funcionario.id,
+        {"perfil": funcionario.perfil},
+    )
+
+    db.commit()
+    db.refresh(funcionario)
+
+    return funcionario
 
 
 @router.post("/auth/login", response_model=TokenResponse)
@@ -361,6 +410,7 @@ def atualizar_estoque(
 # PEDIDOS
 # --------------------------------------------------
 
+
 @router.post(
     "/pedidos",
     status_code=status.HTTP_201_CREATED,
@@ -384,7 +434,10 @@ def criar_pedido(
 
         total = Decimal("0.00")
         itens_pedido = []
+        quantidades_por_produto = {}
+        produtos_por_id = {}
 
+        # Primeiro, somamos as quantidades de cada produto.
         for item in dados.itens:
             if item.quantidade <= 0:
                 raise HTTPException(
@@ -392,8 +445,15 @@ def criar_pedido(
                     detail="A quantidade deve ser maior que zero."
                 )
 
+            quantidades_por_produto[item.produto_id] = (
+                quantidades_por_produto.get(item.produto_id, 0)
+                + item.quantidade
+            )
+
+        # Buscamos e validamos os produtos.
+        for produto_id, quantidade_total in quantidades_por_produto.items():
             produto = db.query(Produto).filter(
-                Produto.id == item.produto_id,
+                Produto.id == produto_id,
                 Produto.unidade_id == dados.unidade_id,
                 Produto.ativo == True,
             ).first()
@@ -401,25 +461,29 @@ def criar_pedido(
             if not produto:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Produto {item.produto_id} não encontrado nesta unidade."
+                    detail=f"Produto {produto_id} não encontrado nesta unidade."
                 )
 
-            if produto.estoque < item.quantidade:
+            if produto.estoque < quantidade_total:
                 raise HTTPException(
                     status_code=409,
                     detail=f"Estoque insuficiente para {produto.nome}."
                 )
 
+            produtos_por_id[produto_id] = produto
+
+        # Calculamos os valores de cada item.
+        for item in dados.itens:
+            produto = produtos_por_id[item.produto_id]
+
             subtotal = produto.preco * item.quantidade
             total += subtotal
 
-            itens_pedido.append(
-                {
-                    "produto": produto,
-                    "quantidade": item.quantidade,
-                    "subtotal": subtotal,
-                }
-            )
+            itens_pedido.append({
+                "produto": produto,
+                "quantidade": item.quantidade,
+                "subtotal": subtotal,
+            })
 
         pedido = Pedido(
             unidade_id=dados.unidade_id,
@@ -432,6 +496,7 @@ def criar_pedido(
         db.add(pedido)
         db.flush()
 
+        # Reservamos o estoque e registramos os itens.
         for item in itens_pedido:
             produto = item["produto"]
             quantidade = item["quantidade"]
@@ -676,5 +741,52 @@ def cancelar_pedido(
         "pedido_id": pedido.id,
         "status": pedido.status,
         "mensagem": "Pedido cancelado e estoque devolvido.",
+    }
+
+
+# --------------------------------------------------
+# CONSULTA DE AUDITORIA
+# --------------------------------------------------
+
+@router.get("/auditoria")
+def listar_auditoria(
+    limite: int = 100,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(exigir_perfis("ADMIN", "GERENTE")),
+):
+    if limite < 1 or limite > 500:
+        raise HTTPException(
+            status_code=422,
+            detail="O limite deve estar entre 1 e 500."
+        )
+
+    registros = (
+        db.query(Auditoria)
+        .order_by(Auditoria.criado_em.desc())
+        .limit(limite)
+        .all()
+    )
+
+    resultado = []
+
+    for registro in registros:
+        try:
+            detalhes = json.loads(registro.detalhes or "{}")
+        except (json.JSONDecodeError, TypeError):
+            detalhes = {}
+
+        resultado.append({
+            "id": registro.id,
+            "usuario_id": registro.usuario_id,
+            "acao": registro.acao,
+            "entidade": registro.entidade,
+            "entidade_id": registro.entidade_id,
+            "detalhes": detalhes,
+            "criado_em": registro.criado_em,
+        })
+
+    return {
+        "total": len(resultado),
+        "registros": resultado,
     }
 

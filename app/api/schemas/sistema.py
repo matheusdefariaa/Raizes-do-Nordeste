@@ -11,6 +11,15 @@ class UsuarioCreate(BaseModel):
     senha: str = Field(min_length=8)
 
 
+class UsuarioFuncionarioCreate(UsuarioCreate):
+    perfil: Literal[
+        "ADMIN",
+        "GERENTE",
+        "COZINHA",
+        "ATENDENTE",
+    ]
+
+
 class LoginRequest(BaseModel):
     email: str
     senha: str

@@ -11,6 +11,9 @@ from app.infrastructure.database.connection import Base, get_db
 from app.infrastructure.database.models.unidade import Unidade
 from app.infrastructure.database import models
 
+from app.api.dependencies.auth import hash_senha
+from app.infrastructure.database.models.operacao import Usuario
+
 
 @pytest.fixture
 def cenario():
@@ -51,16 +54,19 @@ def cenario():
     db.close()
 
     with TestClient(app) as client:
-        # Criar primeiro usuário: ADMIN
-        cadastro = client.post(
-            "/auth/usuarios",
-            json={
-                "nome": "Administrador Teste",
-                "email": "admin@teste.com",
-                "senha": "12345678",
-            },
+    # Criar administrador diretamente no banco de testes
+        db = TestingSession()
+
+        administrador = Usuario(
+            nome="Administrador Teste",
+            email="admin@teste.com",
+            senha_hash=hash_senha("12345678"),
+            perfil="ADMIN",
         )
-        assert cadastro.status_code == 201
+
+        db.add(administrador)
+        db.commit()
+        db.close()
 
         # Autenticar administrador
         login = client.post(
@@ -379,4 +385,171 @@ def test_cadastro_usuario_invalido(cenario):
     )
 
     assert response.status_code == 422
+
+
+
+# 16. Pedido com produto repetido e estoque suficiente
+def test_pedido_produto_repetido_com_estoque_suficiente(cenario):
+    produto = criar_produto(cenario, estoque=6)
+
+    response = cenario["client"].post(
+        "/pedidos",
+        headers=cenario["headers"],
+        json={
+            "unidade_id": 1,
+            "canalPedido": "APP",
+            "itens": [
+                {
+                    "produto_id": produto["id"],
+                    "quantidade": 2,
+                },
+                {
+                    "produto_id": produto["id"],
+                    "quantidade": 3,
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 201
+
+    produtos = cenario["client"].get(
+        "/produtos",
+        headers=cenario["headers"],
+    ).json()
+
+    assert produtos[0]["estoque"] == 1
+
+
+# 17. Pedido com produto repetido e estoque insuficiente
+def test_pedido_produto_repetido_com_estoque_insuficiente(cenario):
+    produto = criar_produto(cenario, estoque=6)
+
+    response = cenario["client"].post(
+        "/pedidos",
+        headers=cenario["headers"],
+        json={
+            "unidade_id": 1,
+            "canalPedido": "APP",
+            "itens": [
+                {
+                    "produto_id": produto["id"],
+                    "quantidade": 4,
+                },
+                {
+                    "produto_id": produto["id"],
+                    "quantidade": 3,
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 409
+
+    produtos = cenario["client"].get(
+        "/produtos",
+        headers=cenario["headers"],
+    ).json()
+
+    assert produtos[0]["estoque"] == 6
+
+
+
+# 18. Impedir pagamento duplicado
+def test_impedir_pagamento_duplicado(cenario):
+    produto = criar_produto(cenario, estoque=10)
+    resposta_pedido = criar_pedido(cenario, produto["id"])
+    pedido = resposta_pedido.json()
+
+    primeiro_pagamento = cenario["client"].post(
+        f'/pedidos/{pedido["id"]}/pagamento',
+        headers=cenario["headers"],
+        json={"aprovado": True},
+    )
+
+    assert primeiro_pagamento.status_code == 200
+
+    segundo_pagamento = cenario["client"].post(
+        f'/pedidos/{pedido["id"]}/pagamento',
+        headers=cenario["headers"],
+        json={"aprovado": True},
+    )
+
+    assert segundo_pagamento.status_code == 409
+
+# 19. Impedir cancelamento duplicado
+def test_impedir_cancelamento_duplicado(cenario):
+    produto = criar_produto(cenario, estoque=10)
+    resposta_pedido = criar_pedido(cenario, produto["id"])
+    pedido = resposta_pedido.json()
+
+    primeiro_cancelamento = cenario["client"].post(
+        f'/pedidos/{pedido["id"]}/cancelar',
+        headers=cenario["headers"],
+    )
+
+    assert primeiro_cancelamento.status_code == 200
+
+    segundo_cancelamento = cenario["client"].post(
+        f'/pedidos/{pedido["id"]}/cancelar',
+        headers=cenario["headers"],
+    )
+
+    assert segundo_cancelamento.status_code == 409
+
+
+
+# 20. ADMIN consegue consultar auditoria
+def test_admin_consultar_auditoria(cenario):
+    produto = criar_produto(cenario, estoque=10)
+
+    response = cenario["client"].get(
+        "/auditoria",
+        headers=cenario["headers"],
+    )
+
+    assert response.status_code == 200
+
+    dados = response.json()
+
+    assert dados["total"] >= 1
+    assert any(
+        registro["acao"] == "PRODUTO_CRIADO"
+        for registro in dados["registros"]
+    )
+
+
+# 21. CLIENTE não consegue consultar auditoria
+def test_cliente_sem_acesso_auditoria(cenario):
+    cadastro = cenario["client"].post(
+        "/auth/usuarios",
+        json={
+            "nome": "Cliente Teste",
+            "email": "cliente@teste.com",
+            "senha": "12345678",
+        },
+    )
+
+    assert cadastro.status_code in (200, 201)
+
+    login = cenario["client"].post(
+        "/auth/login",
+        data={
+            "username": "cliente@teste.com",
+            "password": "12345678",
+        },
+    )
+
+    assert login.status_code == 200
+
+    token_cliente = login.json()["access_token"]
+
+    response = cenario["client"].get(
+        "/auditoria",
+        headers={
+            "Authorization": f"Bearer {token_cliente}"
+        },
+    )
+
+    assert response.status_code == 403
 

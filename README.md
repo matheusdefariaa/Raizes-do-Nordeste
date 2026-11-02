@@ -1,8 +1,6 @@
-
-
 # Rede Raízes do Nordeste
 
-API REST para gerenciamento de uma rede de lanchonetes em expansão, desenvolvida como projeto acadêmico. O sistema permite administrar unidades, usuários, produtos, estoque, pedidos e pagamentos, oferecendo suporte a diferentes canais de atendimento.
+API REST para gerenciamento de uma rede de lanchonetes em expansão, desenvolvida como projeto acadêmico na trilha Back-end. O sistema permite administrar unidades, usuários, produtos, estoque, pedidos e pagamentos, oferecendo suporte a diferentes canais de atendimento.
 
 ## Objetivo
 
@@ -16,6 +14,7 @@ Desenvolver uma solução backend para centralizar as operações da Rede Raíze
 - **SQLAlchemy** — mapeamento objeto-relacional (ORM).
 - **Alembic** — gerenciamento de migrações do banco de dados.
 - **Pydantic** — validação e estruturação de dados.
+- **Pydantic Settings** — gerenciamento de configurações.
 - **JWT** — autenticação baseada em tokens.
 - **Argon2** — proteção de senhas por hash.
 - **Pytest** — testes automatizados.
@@ -25,11 +24,14 @@ Desenvolver uma solução backend para centralizar as operações da Rede Raíze
 
 ### Autenticação e usuários
 
-- Cadastro de usuários.
+- Cadastro público de usuários com perfil CLIENTE.
+- Cadastro de funcionários por administrador.
+- Criação do primeiro administrador por comando CLI.
 - Login com e-mail e senha.
 - Autenticação por token JWT.
 - Proteção de rotas.
-- Controle de acesso baseado em perfis.
+- Controle de acesso baseado em perfis: ADMIN, GERENTE, COZINHA, ATENDENTE e CLIENTE.
+- Consulta dos dados do usuário autenticado.
 
 ### Unidades
 
@@ -44,6 +46,7 @@ Desenvolver uma solução backend para centralizar as operações da Rede Raíze
 - Atualização de estoque.
 - Validação de disponibilidade antes da criação de pedidos.
 - Registro de movimentações de estoque.
+- Devolução de estoque em situações aplicáveis.
 
 ### Pedidos
 
@@ -53,7 +56,8 @@ Desenvolver uma solução backend para centralizar as operações da Rede Raíze
 - Consulta de pedidos.
 - Atualização de status.
 - Cancelamento de pedidos.
-- Devolução de estoque em situações aplicáveis.
+- Validação de estoque considerando quantidades repetidas do mesmo produto.
+- Proteção contra operações duplicadas de pagamento e cancelamento.
 
 ### Pagamentos
 
@@ -62,22 +66,27 @@ Desenvolver uma solução backend para centralizar as operações da Rede Raíze
 - Registro das informações de pagamento.
 - Tratamento de pagamentos recusados e devolução de estoque.
 
+**Observação:** o processamento de pagamentos é simulado. Não existe integração efetiva com um provedor financeiro externo.
+
 ### Auditoria
 
 - Registro de operações relevantes do sistema.
-- Armazenamento de informações para rastreabilidade das ações.
+- Armazenamento do usuário responsável pela operação, quando disponível.
+- Registro da entidade afetada e de seus detalhes.
+- Consulta dos registros de auditoria por usuários com perfil ADMIN ou GERENTE.
+- Limitação da quantidade de registros retornados.
 
 ## Canais de atendimento
 
 O sistema permite identificar a origem de cada pedido:
 
-| Canal  | Descrição                   |
-| ------ | --------------------------- |
-| APP    | Aplicativo                  |
-| TOTEM  | Terminal de autoatendimento |
-| BALCAO | Atendimento presencial      |
+| Canal | Descrição |
+|---|---|
+| APP | Aplicativo |
+| TOTEM | Terminal de autoatendimento |
+| BALCAO | Atendimento presencial |
 | PICKUP | Retirada no estabelecimento |
-| WEB    | Pedido pelo site            |
+| WEB | Pedido pelo site |
 
 Também é possível consultar pedidos filtrando pelo canal de atendimento.
 
@@ -95,8 +104,11 @@ Trabalho/
 │   │   └── schemas/
 │   │       ├── sistema.py
 │   │       └── unidade.py
-│   ├── application/
-│   ├── domain/
+│   ├── cli/
+│   │   ├── __init__.py
+│   │   └── __main__.py
+│   ├── core/
+│   │   └── config.py
 │   ├── infrastructure/
 │   │   └── database/
 │   │       ├── models/
@@ -105,9 +117,14 @@ Trabalho/
 │   │       └── connection.py
 │   └── main.py
 ├── migrations/
+│   ├── versions/
+│   └── env.py
 ├── tests/
 │   └── test_api.py
+├── .env.example
+├── .gitignore
 ├── alembic.ini
+├── requirements.txt
 └── README.md
 ```
 
@@ -119,6 +136,8 @@ Trabalho/
 git clone URL_DO_REPOSITORIO
 cd Trabalho
 ```
+
+Substitua `URL_DO_REPOSITORIO` pelo endereço real do repositório.
 
 ### 2. Criar o ambiente virtual
 
@@ -140,13 +159,51 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 5. Executar as migrações
+### 5. Configurar as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto, utilizando o `.env.example` como referência.
+
+Gere uma chave secreta com:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Configure o arquivo `.env`:
+
+```env
+SECRET_KEY=sua_chave_secreta
+DATABASE_URL=sqlite:///./raizes.db
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+```
+
+Substitua `sua_chave_secreta` pelo valor gerado.
+
+Não compartilhe o arquivo `.env` nem envie suas credenciais ao repositório.
+
+### 6. Executar as migrações
 
 ```bash
 alembic upgrade head
 ```
 
-### 6. Iniciar a aplicação
+Esse comando cria ou atualiza a estrutura do banco de dados conforme as migrações disponíveis.
+
+### 7. Criar o primeiro administrador
+
+Em uma instalação nova, execute:
+
+```bash
+python -m app.cli
+```
+
+O comando solicitará nome, e-mail e senha para criar o primeiro usuário com perfil ADMIN.
+
+A senha será armazenada utilizando hash Argon2.
+
+O comando impede a criação de outro administrador inicial quando já existe um usuário com esse perfil.
+
+### 8. Iniciar a aplicação
 
 ```bash
 uvicorn app.main:app --reload
@@ -178,22 +235,24 @@ http://127.0.0.1:8000/redoc
 
 ## Principais endpoints
 
-| Método | Endpoint                  | Descrição                       |
-| ------ | ------------------------- | ------------------------------- |
-| POST   | `/auth/usuarios`          | Cadastro de usuário             |
-| POST   | `/auth/login`             | Autenticação                    |
-| GET    | `/auth/me`                | Consulta do usuário autenticado |
-| POST   | `/unidades`               | Cadastro de unidade             |
-| GET    | `/unidades`               | Listagem de unidades            |
-| POST   | `/produtos`               | Cadastro de produto             |
-| GET    | `/produtos`               | Listagem de produtos            |
-| PATCH  | `/produtos/{id}/estoque`  | Atualização de estoque          |
-| POST   | `/pedidos`                | Criação de pedido               |
-| GET    | `/pedidos`                | Consulta de pedidos             |
-| GET    | `/pedidos/{id}`           | Consulta de pedido específico   |
-| POST   | `/pedidos/{id}/pagamento` | Processamento de pagamento      |
-| PATCH  | `/pedidos/{id}/status`    | Atualização de status           |
-| POST   | `/pedidos/{id}/cancelar`  | Cancelamento de pedido          |
+| Método | Endpoint | Descrição |
+|---|---|---|
+| POST | `/auth/usuarios` | Cadastro público de usuário |
+| POST | `/auth/usuarios/funcionarios` | Cadastro de funcionário |
+| POST | `/auth/login` | Autenticação |
+| GET | `/auth/me` | Consulta do usuário autenticado |
+| POST | `/unidades` | Cadastro de unidade |
+| GET | `/unidades` | Listagem de unidades |
+| POST | `/produtos` | Cadastro de produto |
+| GET | `/produtos` | Listagem de produtos |
+| PATCH | `/produtos/{id}/estoque` | Atualização de estoque |
+| POST | `/pedidos` | Criação de pedido |
+| GET | `/pedidos` | Consulta de pedidos |
+| GET | `/pedidos/{id}` | Consulta de pedido específico |
+| POST | `/pedidos/{id}/pagamento` | Processamento de pagamento |
+| PATCH | `/pedidos/{id}/status` | Atualização de status |
+| POST | `/pedidos/{id}/cancelar` | Cancelamento de pedido |
+| GET | `/auditoria` | Consulta dos registros de auditoria |
 
 **Observação:** os endpoints protegidos exigem autenticação por token JWT. Os perfis de usuário determinam quais operações podem ser realizadas.
 
@@ -209,14 +268,14 @@ python -m pytest -v
 
 ### Resultados dos testes
 
-**15 testes automatizados aprovados**, cobrindo:
+**21 testes automatizados aprovados**, cobrindo:
 
 - Autenticação e login.
 - Consulta de usuário autenticado.
 - Cadastro e listagem de produtos.
 - Criação e consulta de pedidos.
 - Processamento de pagamentos.
-- Fluxo de atualização de pedidos até a entrega.
+- Fluxo de atualização de pedidos.
 - Cancelamento de pedidos.
 - Devolução de estoque.
 - Tentativas de acesso sem autenticação.
@@ -224,6 +283,11 @@ python -m pytest -v
 - Validação de produtos inexistentes.
 - Validação de estoque insuficiente.
 - Validação de cadastro de usuários.
+- Validação de produtos repetidos em um mesmo pedido.
+- Prevenção de pagamentos duplicados.
+- Prevenção de cancelamentos duplicados.
+- Consulta de auditoria por administrador.
+- Restrição de acesso à auditoria para clientes.
 
 ## Segurança
 
@@ -234,6 +298,7 @@ O projeto implementa mecanismos básicos de segurança, incluindo:
 - Controle de acesso por perfil.
 - Proteção de endpoints que exigem autenticação.
 - Validação de dados de entrada.
+- Configurações sensíveis armazenadas em variáveis de ambiente.
 - Registro de operações relevantes para auditoria.
 
 ## Banco de dados
@@ -251,9 +316,22 @@ As principais entidades incluem:
 - Movimentações de estoque.
 - Auditoria.
 
+## Limitações e evoluções futuras
+
+Embora a API implemente as principais operações de gerenciamento, alguns recursos do cenário de negócio ainda podem ser desenvolvidos em etapas futuras:
+
+- Integração real com provedores externos de pagamento.
+- Programa de fidelização e acúmulo de pontos.
+- Campanhas promocionais e descontos progressivos.
+- Recursos de consentimento, anonimização e gerenciamento de dados pessoais conforme a LGPD.
+- Relatórios gerenciais consolidados por unidade e região.
+- Testes específicos de desempenho e disponibilidade.
+- Estratégias de escalabilidade e tolerância a falhas para ambientes de produção.
+
+Essas funcionalidades fazem parte das possibilidades de evolução da solução e não devem ser confundidas com recursos já implementados.
+
 ## Considerações finais
 
 O projeto demonstra a aplicação de conceitos de desenvolvimento backend, arquitetura de APIs REST, persistência de dados, autenticação, autorização, validação de informações e testes automatizados.
 
 A solução foi desenvolvida com foco na organização das operações da Rede Raízes do Nordeste, buscando oferecer uma base funcional que possa ser expandida futuramente com novas funcionalidades e integrações.
-
