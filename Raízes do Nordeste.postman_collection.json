@@ -1,0 +1,936 @@
+{
+  "info": {
+    "_postman_id": "f7204f0a-a6c7-4139-b132-5f380c1ce1d1",
+    "name": "Raízes do Nordeste",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "56261241"
+  },
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Criar Usuário",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Cliente Teste\",\n  \"email\": \"cliente.postman@teste.com\",\n  \"senha\": \"12345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();",
+                  "",
+                  "pm.collectionVariables.set(\"token\", resposta.access_token);",
+                  "",
+                  "pm.test(\"Login realizado com sucesso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Token JWT retornado\", function () {",
+                  "    pm.expect(resposta.access_token).to.be.a(\"string\");",
+                  "    pm.expect(resposta.token_type).to.eql(\"bearer\");",
+                  "});",
+                  "",
+                  "pm.test(\"Perfil correto\", function () {",
+                  "    pm.expect(resposta.perfil).to.eql(\"CLIENTE\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "cliente.postman@teste.com",
+                  "type": "text",
+                  "uuid": "47ea3754-f75d-41e5-91bd-67795a70c4f7"
+                },
+                {
+                  "key": "password",
+                  "value": "12345678",
+                  "type": "text",
+                  "uuid": "795b0534-045f-4eba-9cb8-6db4c7511a92"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar usuário autenticado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Consulta do usuário autenticado - 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Retorna os dados do usuário\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "",
+                  "    pm.expect(resposta).to.have.property(\"id\");",
+                  "    pm.expect(resposta).to.have.property(\"nome\");",
+                  "    pm.expect(resposta).to.have.property(\"email\");",
+                  "    pm.expect(resposta.perfil).to.eql(\"CLIENTE\");",
+                  "});",
+                  "",
+                  "pm.test(\"Não retorna a senha\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "",
+                  "    pm.expect(resposta).to.not.have.property(\"senha\");",
+                  "    pm.expect(resposta).to.not.have.property(\"senha_hash\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();",
+                  "",
+                  "pm.collectionVariables.set(\"token_admin\", resposta.access_token);",
+                  "",
+                  "pm.test(\"Login ADMIN realizado\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Perfil ADMIN\", function () {",
+                  "    pm.expect(resposta.perfil).to.eql(\"ADMIN\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "admin@teste.com",
+                  "type": "text",
+                  "uuid": "7a23d283-7f3d-4521-bcd6-930ad212dbaa"
+                },
+                {
+                  "key": "password",
+                  "value": "12345678",
+                  "type": "text",
+                  "uuid": "da4326a1-363d-4af5-9b20-2934ac720a0f"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar usuário sem token.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Acesso sem token deve ser negado\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"Retorna mensagem de autenticação\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "",
+                  "    pm.expect(resposta).to.have.property(\"detail\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Unidades",
+      "item": [
+        {
+          "name": "Conferir Unidades",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/unidades/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "unidades",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Produtos e Estoque",
+      "item": [
+        {
+          "name": "Conferir Produtos Unidade 1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos?unidade_id=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "produtos"
+              ],
+              "query": [
+                {
+                  "key": "unidade_id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Conferir Produtos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Cliente não pode cadastrar produtos\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test(\"Retorna mensagem de permissão negada\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.expect(resposta.detail).to.include(\"permissão\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unidade_id\": 1,\n  \"nome\": \"Cuscuz de Teste\",\n  \"descricao\": \"Produto para teste de permissões\",\n  \"preco\": 15.00,\n  \"estoque\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/produtos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "produtos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cadastrar produto ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();",
+                  "",
+                  "if (pm.response.code === 201 && resposta.id) {",
+                  "    pm.collectionVariables.set(\"produto_id\", resposta.id);",
+                  "}",
+                  "",
+                  "pm.test(\"Produto cadastrado com sucesso\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unidade_id\": 1,\n  \"nome\": \"Cuscuz de Teste\",\n  \"descricao\": \"Produto para validar o cadastro\",\n  \"preco\": 15.00,\n  \"estoque\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/produtos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "produtos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar estoque",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos/3/estoque?quantidade=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "produtos",
+                "3",
+                "estoque"
+              ],
+              "query": [
+                {
+                  "key": "quantidade",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consulta Estoque",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "produtos"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Criar Pedido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();",
+                  "",
+                  "if (pm.response.code === 201 && resposta.id) {",
+                  "    pm.collectionVariables.set(\"pedido_id\", resposta.id);",
+                  "}",
+                  "",
+                  "pm.test(\"Pedido criado com sucesso\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unidade_id\": 1,\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produto_id\": 3,\n      \"quantidade\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pedidos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pedidos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar o pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pedidos/{{pedido_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar pedido para pagamento recusado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();",
+                  "",
+                  "if (pm.response.code === 201 && resposta.id) {",
+                  "    pm.collectionVariables.set(\"pedido_recusado_id\", resposta.id);",
+                  "}",
+                  "",
+                  "pm.test(\"Pedido para pagamento recusado criado\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"unidade_id\": 1,\n    \"canalPedido\": \"APP\",\n    \"itens\": [\n        {\n            \"produto_id\": 3,\n            \"quantidade\": 1\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pedidos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pedidos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Estoque insuficiente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Pedido com estoque insuficiente é rejeitado\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test(\"Retorna mensagem de estoque insuficiente\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.expect(resposta.detail).to.include(\"Estoque insuficiente\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"unidade_id\": 1,\n    \"canalPedido\": \"APP\",\n    \"itens\": [\n        {\n            \"produto_id\": 3,\n            \"quantidade\": 1000\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pedidos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pedidos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "quantidade inválida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Quantidade zero é rejeitada\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Retorna erro de validação da quantidade\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.expect(resposta.detail).to.be.an(\"array\");",
+                  "    pm.expect(resposta.detail[0].type).to.eql(\"greater_than\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"unidade_id\": 1,\n    \"canalPedido\": \"APP\",\n    \"itens\": [\n        {\n            \"produto_id\": 3,\n            \"quantidade\": 0\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pedidos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pedidos"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pagamentos",
+      "item": [
+        {
+          "name": "Testar pagamento aprovado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Pagamento processado com sucesso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Pagamento aprovado corretamente\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "",
+                  "    pm.expect(resposta.pagamento).to.eql(\"APROVADO\");",
+                  "    pm.expect(resposta.status_pedido).to.eql(\"AGUARDANDO_PREPARO\");",
+                  "    pm.expect(resposta.mensagem).to.eql(\"Pagamento aprovado.\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"aprovado\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pedidos/{{pedido_id}}/pagamento",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "pagamento"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Testar pagamento recusado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();",
+                  "",
+                  "pm.test(\"Pagamento processado com sucesso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Pagamento recusado corretamente\", function () {",
+                  "    pm.expect(resposta.pagamento).to.eql(\"RECUSADO\");",
+                  "    pm.expect(resposta.status_pedido).to.eql(\"PAGAMENTO_RECUSADO\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"aprovado\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pedidos/{{pedido_recusado_id}}/pagamento",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_recusado_id}}",
+                "pagamento"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auditoria",
+      "item": [
+        {
+          "name": "Consultar Histórico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"ADMIN pode consultar a auditoria\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Retorna os registros de auditoria\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.expect(resposta).to.have.property(\"total\");",
+                  "    pm.expect(resposta).to.have.property(\"registros\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auditoria",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auditoria"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar Histórico Cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"CLIENTE não pode consultar a auditoria\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test(\"Retorna mensagem de permissão negada\", function () {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.expect(resposta.detail).to.include(\"permissão\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auditoria",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auditoria"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "token",
+      "secret": true
+    },
+    {
+      "key": "pedido_id",
+      "value": ""
+    },
+    {
+      "key": "produto_id",
+      "value": ""
+    },
+    {
+      "key": "token_admin",
+      "secret": true
+    },
+    {
+      "key": "pedido_recusado_id",
+      "value": ""
+    }
+  ]
+}
