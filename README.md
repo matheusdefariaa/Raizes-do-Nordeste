@@ -137,8 +137,6 @@ git clone git@github.com:matheusdefariaa/Raizes-do-Nordeste.git
 cd Raizes-do-Nordeste
 ```
 
-Substitua `URL_DO_REPOSITORIO` pelo endereço real do repositório.
-
 ### 2. Criar o ambiente virtual
 
 ```bash
