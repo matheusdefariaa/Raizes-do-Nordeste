@@ -5,26 +5,23 @@ from app.infrastructure.database.connection import get_db
 from app.infrastructure.database.models.unidade import Unidade
 from app.api.schemas.unidade import UnidadeCreate, UnidadeResponse
 
+from app.api.dependencies.auth import exigir_perfis
+from app.infrastructure.database.models.operacao import Usuario
+
 router = APIRouter(prefix="/unidades", tags=["Unidades"])
 
 
-@router.post(
-    "/",
-    response_model=UnidadeResponse,
-    status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=UnidadeResponse, status_code=201)
 def criar_unidade(
     dados: UnidadeCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(exigir_perfis("ADMIN")),
 ):
     unidade = Unidade(**dados.model_dump())
-
     db.add(unidade)
     db.commit()
     db.refresh(unidade)
-
     return unidade
-
 
 @router.get("/", response_model=list[UnidadeResponse])
 def listar_unidades(db: Session = Depends(get_db)):

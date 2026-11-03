@@ -553,3 +553,139 @@ def test_cliente_sem_acesso_auditoria(cenario):
 
     assert response.status_code == 403
 
+
+
+# 22. Admin cadastrar unidade
+def test_admin_cadastrar_unidade(cenario):
+    resposta = cenario["client"].post(
+        "/unidades/",
+        json={
+            "nome": "Unidade Centro",
+            "cidade": "Barra do Piraí",
+            "estado": "RJ",
+            "endereco": "Rua das Flores, 100",
+            "ativa": True
+        },
+        headers=cenario["headers"]
+    )
+
+    assert resposta.status_code == 201
+    dados = resposta.json()
+
+    assert dados["nome"] == "Unidade Centro"
+    assert dados["cidade"] == "Barra do Piraí"
+
+
+# 23. CLIENTE não consegue cadastrar unidade
+def test_cliente_nao_pode_cadastrar_unidade(cenario):
+    resposta_cadastro = cenario["client"].post(
+        "/auth/usuarios",
+        json={
+            "nome": "Cliente Teste",
+            "email": "cliente_unidade@teste.com",
+            "senha": "12345678"
+        }
+    )
+
+    assert resposta_cadastro.status_code == 201
+
+    resposta_login = cenario["client"].post(
+        "/auth/login",
+        data={
+            "username": "cliente_unidade@teste.com",
+            "password": "12345678"
+        }
+    )
+
+    assert resposta_login.status_code == 200
+    token = resposta_login.json()["access_token"]
+
+    resposta = cenario["client"].post(
+        "/unidades/",
+        json={
+            "nome": "Unidade Não Autorizada",
+            "cidade": "Barra do Piraí",
+            "estado": "RJ",
+            "endereco": "Rua Teste, 200",
+            "ativa": True
+        },
+        headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert resposta.status_code == 403
+
+
+def test_gerente_nao_pode_cadastrar_unidade(cenario):
+    resposta_cadastro = cenario["client"].post(
+        "/auth/usuarios/funcionarios",
+        json={
+            "nome": "Gerente Teste",
+            "email": "gerente_unidade@teste.com",
+            "senha": "12345678",
+            "perfil": "GERENTE"
+        },
+        headers=cenario["headers"]
+    )
+
+    assert resposta_cadastro.status_code == 201
+
+    resposta_login = cenario["client"].post(
+        "/auth/login",
+        data={
+            "username": "gerente_unidade@teste.com",
+            "password": "12345678"
+        }
+    )
+
+    assert resposta_login.status_code == 200
+
+    token = resposta_login.json()["access_token"]
+
+    resposta = cenario["client"].post(
+        "/unidades/",
+        json={
+            "nome": "Unidade Teste",
+            "cidade": "Barra do Piraí",
+            "estado": "RJ",
+            "endereco": "Rua Teste, 100",
+            "ativa": True
+        },
+        headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert resposta.status_code == 403
+
+
+def test_gerente_consultar_auditoria(cenario):
+    resposta_cadastro = cenario["client"].post(
+        "/auth/usuarios/funcionarios",
+        json={
+            "nome": "Gerente Auditoria",
+            "email": "gerente_auditoria@teste.com",
+            "senha": "12345678",
+            "perfil": "GERENTE"
+        },
+        headers=cenario["headers"]
+    )
+
+    assert resposta_cadastro.status_code == 201
+
+    resposta_login = cenario["client"].post(
+        "/auth/login",
+        data={
+            "username": "gerente_auditoria@teste.com",
+            "password": "12345678"
+        }
+    )
+
+    assert resposta_login.status_code == 200
+
+    token = resposta_login.json()["access_token"]
+
+    resposta = cenario["client"].get(
+        "/auditoria",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert resposta.status_code == 200
+    assert "registros" in resposta.json()

@@ -35,7 +35,7 @@ Desenvolver uma solução backend para centralizar as operações da Rede Raíze
 
 ### Unidades
 
-- Cadastro de unidades.
+- Cadastro de unidades, restrito a usuários com perfil ADMIN.
 - Consulta de unidades cadastradas.
 - Armazenamento de informações como nome, cidade, estado e endereço.
 
@@ -133,7 +133,7 @@ Trabalho/
 ### 1. Clonar o repositório
 
 ```bash
-git clone URL_DO_REPOSITORIO
+git clone git@github.com:matheusdefariaa/Raizes-do-Nordeste.git
 cd Trabalho
 ```
 
@@ -237,21 +237,24 @@ http://127.0.0.1:8000/redoc
 
 | Método | Endpoint | Descrição |
 |---|---|---|
+| GET | `/` | Informações iniciais da API |
+| GET | `/health` | Verificação de disponibilidade |
 | POST | `/auth/usuarios` | Cadastro público de usuário |
-| POST | `/auth/usuarios/funcionarios` | Cadastro de funcionário |
+| POST | `/auth/usuarios/funcionarios` | Cadastro de funcionário por ADMIN |
 | POST | `/auth/login` | Autenticação |
 | GET | `/auth/me` | Consulta do usuário autenticado |
-| POST | `/unidades` | Cadastro de unidade |
-| GET | `/unidades` | Listagem de unidades |
+| POST | `/unidades/` | Cadastro de unidade (ADMIN) |
+| GET | `/unidades/` | Listagem de unidades |
+| GET | `/unidades/{unidade_id}` | Consulta de unidade específica |
 | POST | `/produtos` | Cadastro de produto |
 | GET | `/produtos` | Listagem de produtos |
-| PATCH | `/produtos/{id}/estoque` | Atualização de estoque |
+| PATCH | `/produtos/{produto_id}/estoque` | Atualização de estoque |
 | POST | `/pedidos` | Criação de pedido |
 | GET | `/pedidos` | Consulta de pedidos |
-| GET | `/pedidos/{id}` | Consulta de pedido específico |
-| POST | `/pedidos/{id}/pagamento` | Processamento de pagamento |
-| PATCH | `/pedidos/{id}/status` | Atualização de status |
-| POST | `/pedidos/{id}/cancelar` | Cancelamento de pedido |
+| GET | `/pedidos/{pedido_id}` | Consulta de pedido específico |
+| POST | `/pedidos/{pedido_id}/pagamento` | Processamento de pagamento |
+| PATCH | `/pedidos/{pedido_id}/status` | Atualização de status |
+| POST | `/pedidos/{pedido_id}/cancelar` | Cancelamento de pedido |
 | GET | `/auditoria` | Consulta dos registros de auditoria |
 
 **Observação:** os endpoints protegidos exigem autenticação por token JWT. Os perfis de usuário determinam quais operações podem ser realizadas.
@@ -268,9 +271,9 @@ python -m pytest -v
 
 ### Resultados dos testes
 
-**21 testes automatizados aprovados**, cobrindo:
+**25 testes automatizados aprovados**, cobrindo:
 
-- Autenticação e login.
+- Cadastro e autenticação de usuários.
 - Consulta de usuário autenticado.
 - Cadastro e listagem de produtos.
 - Criação e consulta de pedidos.
@@ -279,15 +282,17 @@ python -m pytest -v
 - Cancelamento de pedidos.
 - Devolução de estoque.
 - Tentativas de acesso sem autenticação.
-- Controle de permissões.
+- Controle de permissões por perfil.
 - Validação de produtos inexistentes.
 - Validação de estoque insuficiente.
 - Validação de cadastro de usuários.
 - Validação de produtos repetidos em um mesmo pedido.
 - Prevenção de pagamentos duplicados.
 - Prevenção de cancelamentos duplicados.
-- Consulta de auditoria por administrador.
+- Consulta de auditoria por administrador e gerente.
 - Restrição de acesso à auditoria para clientes.
+- Cadastro de unidades por administrador.
+- Restrição de cadastro de unidades para clientes e gerentes.
 
 ## Segurança
 
