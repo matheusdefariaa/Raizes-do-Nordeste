@@ -330,22 +330,7 @@ As principais entidades incluem:
 - Clique em Upload Files.
 - Escolha o arquivo Raízes do Nordeste.postman_collection.json da coleção.
 
-## Limitações e evoluções futuras
-
-Embora a API implemente as principais operações de gerenciamento, alguns recursos do cenário de negócio ainda podem ser desenvolvidos em etapas futuras:
-
-- Integração real com provedores externos de pagamento.
-- Programa de fidelização e acúmulo de pontos.
-- Campanhas promocionais e descontos progressivos.
-- Recursos de consentimento, anonimização e gerenciamento de dados pessoais conforme a LGPD.
-- Relatórios gerenciais consolidados por unidade e região.
-- Testes específicos de desempenho e disponibilidade.
-- Estratégias de escalabilidade e tolerância a falhas para ambientes de produção.
-
-Essas funcionalidades fazem parte das possibilidades de evolução da solução e não devem ser confundidas com recursos já implementados.
-
 ## Considerações finais
 
-O projeto demonstra a aplicação de conceitos de desenvolvimento backend, arquitetura de APIs REST, persistência de dados, autenticação, autorização, validação de informações e testes automatizados.
+O projeto demonstra a aplicação de conceitos de desenvolvimento backend usando a linguagem Python, arquitetura de APIs REST, persistência de dados, autenticação, autorização, validação de informações e testes automatizados.
 
-A solução foi desenvolvida com foco na organização das operações da Rede Raízes do Nordeste, buscando oferecer uma base funcional que possa ser expandida futuramente com novas funcionalidades e integrações.
