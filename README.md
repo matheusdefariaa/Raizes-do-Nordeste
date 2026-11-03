@@ -177,7 +177,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 
 Substitua `sua_chave_secreta` pelo valor gerado.
 
-Não compartilhe o arquivo `.env` nem envie suas credenciais ao repositório.
 
 ### 6. Executar as migrações
 
