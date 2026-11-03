@@ -321,6 +321,15 @@ As principais entidades incluem:
 - Movimentações de estoque.
 - Auditoria.
 
+
+## Importação coleção Postman
+
+- Abra o Postman.
+- Clique no botão Import, no canto superior esquerdo.
+- Selecione File.
+- Clique em Upload Files.
+- Escolha o arquivo Raízes do Nordeste.postman_collection.json da coleção.
+
 ## Limitações e evoluções futuras
 
 Embora a API implemente as principais operações de gerenciamento, alguns recursos do cenário de negócio ainda podem ser desenvolvidos em etapas futuras:
